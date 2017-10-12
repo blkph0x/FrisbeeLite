@@ -572,14 +572,31 @@ class MainPanel(wx.Panel):
 
 
     def SingleShot(self, event):
- 
+	# release the device
+	usb.util.release_interface(dev, interface)
+# reattach the device to the OS kernel
+	self.dev.attach_kernel_driver(interface)
+	for cfg in self.dev:
+  		for intf in cfg:
+    			if self.dev.is_kernel_driver_active(intf.bInterfaceNumber):
+      				try:
+        				self.dev.detach_kernel_driver(intf.bInterfaceNumber)
+      				except usb.core.USBError as e:
+        				sys.exit("Could not detatch kernel driver from interface({0}): {1}".format(intf.bInterfaceNumber, str(e)))
+	self.dev.set_configuration() 
 	if not self.dev:
           self.dev = usb.core.find(idVendor=self.vid, idProduct=self.pid)
 
         if self.dev is None:
           wx.MessageBox("Device not found!", caption="Error", style=wx.OK|wx.ICON_ERROR, parent=self)
           return(1) 
-  
+	for cfg in self.dev:
+  		for intf in cfg:
+    			if self.dev.is_kernel_driver_active(intf.bInterfaceNumber):
+      				try:
+        				self.dev.detach_kernel_driver(intf.bInterfaceNumber)
+      				except usb.core.USBError as e:
+        				sys.exit("Could not detatch kernel driver from interface({0}): {1}".format(intf.bInterfaceNumber, str(e)))  
 	self.dev.set_configuration()     
 
 	try:
@@ -614,7 +631,13 @@ class MainPanel(wx.Panel):
 	  self.statusbar.SetStatusText("Fuzzing Status: Not fuzzing", 2)
           wx.MessageBox("Device not found!", caption="Error", style=wx.OK|wx.ICON_ERROR, parent=self)	  
           return(1) 
- 
+ 	for cfg in self.dev:
+  		for intf in cfg:
+    			if self.dev.is_kernel_driver_active(intf.bInterfaceNumber):
+      				try:
+        				self.dev.detach_kernel_driver(intf.bInterfaceNumber)
+      				except usb.core.USBError as e:
+        				sys.exit("Could not detatch kernel driver from interface({0}): {1}".format(intf.bInterfaceNumber, str(e)))
 	self.dev.set_configuration()
 
 	if (self.bmRequestTypefuzz and not firstrun): 
